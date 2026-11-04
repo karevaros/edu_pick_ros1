@@ -1,0 +1,8 @@
+# 경로 계획기 — OMPL 의 RRTConnect (무작위 탐색으로 충돌 없는 관절 경로를 찾는다)
+planner_configs:
+  RRTConnect: {type: geometric::RRTConnect, range: 0.0}
+arm:
+  default_planner_config: RRTConnect
+  planner_configs: [RRTConnect]
+  # 경로를 더 촘촘히 검사(기본 0.005) — 쥔 물체가 장애물 옆을 지날 때 '계획은 됐는데 사후 검사에서 무효'가 반복됐다
+  longest_valid_segment_fraction: 0.002

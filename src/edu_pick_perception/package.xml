@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>edu_pick_perception</name>
+  <version>1.0.0</version>
+  <description>Pick and place 실습 — 깊이 점군으로 테이블 위 물체 인식(object_detector) · 가상 카메라(fake_camera)</description>
+  <maintainer email="101551311+karevaros@users.noreply.github.com">edu_pick</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rospkg</exec_depend>
+  <exec_depend>edu_pick_msgs</exec_depend>
+  <exec_depend>edu_pick_description</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+</package>

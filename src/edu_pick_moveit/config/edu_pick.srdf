@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 자동 생성: tools/gen_srdf.py — 직접 편집하지 말 것.
+     무작위 10000 자세로 충돌 무시 쌍(ACM)을 산출. 로봇·그리퍼·카메라 형상을 바꾸면 재생성. -->
+<robot name="edu_pick">
+    <group name="arm">
+        <chain base_link="link0" tip_link="tool_tip"/>
+    </group>
+    <virtual_joint name="fixed_base" type="fixed" parent_frame="world" child_link="world"/>
+    <passive_joint name="rg2_finger_joint1"/>
+    <passive_joint name="rg2_finger_joint2"/>
+    <!-- 충돌 무시 쌍 (Adjacent=붙어있음 / Always=항상겹침 / Never=절대안닿음 / Default=초기자세에서겹침) -->
+    <disable_collisions link1="d405_link" link2="link4" reason="Never"/>
+    <disable_collisions link1="d405_link" link2="link5" reason="Never"/>
+    <disable_collisions link1="d405_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="d405_link" link2="rg2_hand" reason="Never"/>
+    <disable_collisions link1="d405_link" link2="rg2_leftfinger" reason="Never"/>
+    <disable_collisions link1="d405_link" link2="rg2_rightfinger" reason="Never"/>
+    <disable_collisions link1="link0" link2="link1" reason="Adjacent"/>
+    <disable_collisions link1="link0" link2="link2" reason="Never"/>
+    <disable_collisions link1="link0" link2="robot_stand" reason="Always"/>
+    <disable_collisions link1="link0" link2="table" reason="Never"/>
+    <disable_collisions link1="link1" link2="link2" reason="Adjacent"/>
+    <disable_collisions link1="link1" link2="robot_stand" reason="Never"/>
+    <disable_collisions link1="link1" link2="table" reason="Never"/>
+    <disable_collisions link1="link2" link2="link3" reason="Adjacent"/>
+    <disable_collisions link1="link3" link2="link4" reason="Adjacent"/>
+    <disable_collisions link1="link4" link2="link5" reason="Adjacent"/>
+    <disable_collisions link1="link4" link2="link6" reason="Never"/>
+    <disable_collisions link1="link4" link2="rg2_hand" reason="Never"/>
+    <disable_collisions link1="link4" link2="rg2_leftfinger" reason="Never"/>
+    <disable_collisions link1="link4" link2="rg2_rightfinger" reason="Never"/>
+    <disable_collisions link1="link5" link2="link6" reason="Adjacent"/>
+    <disable_collisions link1="link5" link2="rg2_hand" reason="Never"/>
+    <disable_collisions link1="link5" link2="rg2_leftfinger" reason="Never"/>
+    <disable_collisions link1="link5" link2="rg2_rightfinger" reason="Never"/>
+    <disable_collisions link1="link6" link2="rg2_hand" reason="Never"/>
+    <disable_collisions link1="link6" link2="rg2_leftfinger" reason="Never"/>
+    <disable_collisions link1="link6" link2="rg2_rightfinger" reason="Never"/>
+    <disable_collisions link1="rg2_hand" link2="rg2_leftfinger" reason="Adjacent"/>
+    <disable_collisions link1="rg2_hand" link2="rg2_rightfinger" reason="Adjacent"/>
+    <disable_collisions link1="rg2_leftfinger" link2="rg2_rightfinger" reason="Never"/>
+    <disable_collisions link1="robot_stand" link2="table" reason="Always"/>
+</robot>

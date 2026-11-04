@@ -1,0 +1,5 @@
+# 제어박스에 스크립트 명령 한 줄 보내기 (예: 그리퍼 "gripper_macro 12,0,1,0,100,60,0,0,0,0")
+string script
+---
+bool success         # 제어박스가 "The command was executed" 로 답했나 (= 접수. 끝났다는 뜻은 아님)
+string message

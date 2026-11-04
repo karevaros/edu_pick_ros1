@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>edu_pick_driver</name>
+  <version>1.0.0</version>
+  <description>레인보우 RB 협동로봇 ROS 1 드라이버 (제어박스 TCP 직접 통신 · RB_ROS rb_connector 방식)</description>
+  <maintainer email="101551311+karevaros@users.noreply.github.com">edu_pick</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>edu_pick_msgs</exec_depend>
+</package>

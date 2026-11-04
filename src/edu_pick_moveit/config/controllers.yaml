@@ -1,0 +1,9 @@
+# MoveIt 이 계획한 궤적을 실행할 컨트롤러 = rb_driver 의 /arm_controller/follow_joint_trajectory 액션
+# 그리퍼는 MoveIt 을 거치지 않고 실습 노드가 직접 /gripper_controller 액션을 부른다.
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+controller_list:
+  - name: arm_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: true
+    joints: [base, shoulder, elbow, wrist1, wrist2, wrist3]

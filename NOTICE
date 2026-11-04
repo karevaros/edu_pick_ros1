@@ -1,0 +1,18 @@
+edu_pick_ros1 — RB5-850e + RealSense D405 pick and place teaching package (ROS 1 Noetic)
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party material included in this repository
+------------------------------------------------
+* src/edu_pick_description/meshes/rg2/  (OnRobot RG2 gripper meshes)
+  From AndrejOrsula/ur5_rg2_ign (https://github.com/AndrejOrsula/ur5_rg2_ign), BSD license
+  (as declared in that package's package.xml). Modified: mimic joint fix, packaging.
+* src/edu_pick_driver/scripts/rb_driver.py
+  Communication scheme (command port 5000 / data port 5001, move_ros_j_* trajectory commands,
+  status block layout) based on RainbowRobotics RB_ROS rb_connector
+  (https://github.com/makeitjune/RB_ROS), BSD license (as declared in its package.xml).
+  Rewritten in Python; the trajectory is taken from the action goal instead of the display topic.
+
+Third-party material fetched by install.sh (not redistributed here)
+-------------------------------------------------------------------
+* RainbowRobotics/rbpodo_ros2 rbpodo_description (commit 5e8294a) — Apache-2.0
+  Wrapped as a catkin package by install.sh.

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>edu_pick_bringup</name>
+  <version>1.0.0</version>
+  <description>Pick and place 실습 — 전체 실행 launch · RG2 그리퍼 어댑터</description>
+  <maintainer email="101551311+karevaros@users.noreply.github.com">edu_pick</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>edu_pick_description</exec_depend>
+  <exec_depend>edu_pick_driver</exec_depend>
+  <exec_depend>edu_pick_moveit</exec_depend>
+  <exec_depend>edu_pick_perception</exec_depend>
+  <exec_depend>edu_pick_msgs</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rospkg</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+</package>

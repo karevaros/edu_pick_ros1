@@ -1,0 +1,16 @@
+# MoveIt 관절 제한. 레인보우 URDF 에는 가속도 제한이 없어 여기서 보강한다
+# (없으면 궤적 시간 계산이 안 된다). 가속도는 제조사 공개값이 없어 보수적으로 잡은 값.
+#
+# 속도 배율: 계획된 궤적은 최대속도(3.14 rad/s)의 이 비율로 움직인다.
+#   rb_driver 의 max_joint_velocity(0.8 rad/s)보다 느려야 한다 — 넘는 궤적은 드라이버가 거부 → 0.20 × 3.14 ≈ 0.63 rad/s
+#   (실습 노드는 scene.yaml motion.velocity_scaling 을 쓴다 — 그쪽이 우선. 이 값은 RViz 등의 기본값)
+default_velocity_scaling_factor: 0.20
+default_acceleration_scaling_factor: 0.20
+
+joint_limits:
+  base:     {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 3.0}
+  shoulder: {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 3.0}
+  elbow:    {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 3.0}
+  wrist1:   {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 3.0}
+  wrist2:   {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 5.0}
+  wrist3:   {has_velocity_limits: true, max_velocity: 3.14, has_acceleration_limits: true, max_acceleration: 5.0}

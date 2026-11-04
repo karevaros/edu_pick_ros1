@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  OnRobot RG2 2지 그리퍼
+  출처: AndrejOrsula/ur5_rg2_ign (BSD) 의 ur5_rg2.urdf 중 RG2 부분 (메시 포함)
+  변경: 패키지 경로 재지정 · rg2_finger_joint2 의 mimic 대상 오기(panda_finger_joint1) 수정 · 매크로화
+  관절: rg2_finger_joint1 (0 = 닫힘 ~ 0.6 rad ≈ 실기 100% 열림) / rg2_finger_joint2 (mimic)
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="onrobot_rg2" params="parent *origin">
+    <joint name="rg2_hand_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="rg2_hand"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+
+    <link name="rg2_hand">
+      <visual><geometry><mesh filename="package://edu_pick_description/meshes/rg2/visual/hand.dae"/></geometry></visual>
+      <collision><geometry><mesh filename="package://edu_pick_description/meshes/rg2/collision/hand.stl"/></geometry></collision>
+      <inertial><mass value="0.5"/><inertia ixx="1e-3" ixy="0" ixz="0" iyy="1e-3" iyz="0" izz="1e-3"/></inertial>
+    </link>
+
+    <link name="rg2_leftfinger">
+      <visual><geometry><mesh filename="package://edu_pick_description/meshes/rg2/visual/finger.dae"/></geometry></visual>
+      <collision><geometry><mesh filename="package://edu_pick_description/meshes/rg2/collision/finger.stl"/></geometry></collision>
+      <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    </link>
+
+    <link name="rg2_rightfinger">
+      <visual>
+        <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
+        <geometry><mesh filename="package://edu_pick_description/meshes/rg2/visual/finger.dae"/></geometry>
+      </visual>
+      <collision>
+        <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
+        <geometry><mesh filename="package://edu_pick_description/meshes/rg2/collision/finger.stl"/></geometry>
+      </collision>
+      <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    </link>
+
+    <joint name="rg2_finger_joint1" type="revolute">
+      <parent link="rg2_hand"/>
+      <child link="rg2_leftfinger"/>
+      <origin rpy="0 0 0" xyz="0.105 0.017 0"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="10.6" lower="0.0" upper="1.18" velocity="1.57"/>
+    </joint>
+
+    <joint name="rg2_finger_joint2" type="revolute">
+      <parent link="rg2_hand"/>
+      <child link="rg2_rightfinger"/>
+      <origin rpy="0 0 0" xyz="0.105 -0.017 0"/>
+      <axis xyz="0 0 -1"/>
+      <limit effort="10.6" lower="0.0" upper="1.18" velocity="1.57"/>
+      <mimic joint="rg2_finger_joint1"/>
+    </joint>
+  </xacro:macro>
+</robot>

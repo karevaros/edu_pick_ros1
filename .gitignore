@@ -1,0 +1,8 @@
+build/
+devel/
+install/
+logs/
+src/thirdparty/
+src/CMakeLists.txt
+__pycache__/
+*.pyc

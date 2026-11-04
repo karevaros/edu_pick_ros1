@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>edu_pick_description</name>
+  <version>1.0.0</version>
+  <description>Pick and place 실습 — 로봇 모델(테이블 + RB5-850e + RG2 + D405)과 실습 설정 scene.yaml</description>
+  <maintainer email="101551311+karevaros@users.noreply.github.com">edu_pick</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rbpodo_description</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz</exec_depend>
+</package>

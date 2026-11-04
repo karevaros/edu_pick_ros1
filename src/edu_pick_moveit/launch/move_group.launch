@@ -1,0 +1,37 @@
+<!-- MoveIt move_group — 경로 계획·실행 서버
+     이 노드가 제공하는 것 (pick_place 가 쓰는 것)
+       /move_group             (액션)    관절 목표까지 충돌 없는 경로 계획 (pick_place 는 계획만 하고 아래로 실행)
+       /execute_trajectory     (액션)    만든 궤적 실행 → arm_controller(rb_driver)
+       /compute_ik             (서비스)  손끝 자세 → 관절값
+       /compute_cartesian_path (서비스)  손끝 직선 경로
+       /apply_planning_scene   (서비스)  장애물 넣기·빼기
+     robot_description 은 이 파일을 부르는 쪽(pick_place.launch)이 올려 둔다. -->
+<launch>
+  <param name="robot_description_semantic" textfile="$(find edu_pick_moveit)/config/edu_pick.srdf"/>
+  <rosparam ns="robot_description_planning" command="load" file="$(find edu_pick_moveit)/config/joint_limits.yaml"/>
+  <rosparam ns="robot_description_kinematics" command="load" file="$(find edu_pick_moveit)/config/kinematics.yaml"/>
+
+  <node name="move_group" pkg="moveit_ros_move_group" type="move_group" output="screen">
+    <!-- 계획기 -->
+    <param name="planning_plugin" value="ompl_interface/OMPLPlanner"/>
+    <param name="request_adapters" value="default_planner_request_adapters/AddTimeOptimalParameterization
+                                          default_planner_request_adapters/ResolveConstraintFrames
+                                          default_planner_request_adapters/FixWorkspaceBounds
+                                          default_planner_request_adapters/FixStartStateBounds
+                                          default_planner_request_adapters/FixStartStateCollision
+                                          default_planner_request_adapters/FixStartStatePathConstraints"/>
+    <param name="start_state_max_bounds_error" value="0.1"/>
+    <rosparam command="load" file="$(find edu_pick_moveit)/config/ompl_planning.yaml"/>
+    <!-- 실행 -->
+    <param name="allow_trajectory_execution" value="true"/>
+    <rosparam command="load" file="$(find edu_pick_moveit)/config/controllers.yaml"/>
+    <param name="trajectory_execution/allowed_execution_duration_scaling" value="1.5"/>
+    <param name="trajectory_execution/allowed_goal_duration_margin" value="2.0"/>
+    <param name="trajectory_execution/allowed_start_tolerance" value="0.05"/>
+    <!-- 장면 공유 (RViz 표시용) -->
+    <param name="publish_planning_scene" value="true"/>
+    <param name="publish_geometry_updates" value="true"/>
+    <param name="publish_state_updates" value="true"/>
+    <param name="publish_transforms_updates" value="true"/>
+  </node>
+</launch>

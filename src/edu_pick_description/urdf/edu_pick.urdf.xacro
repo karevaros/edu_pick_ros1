@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+  실습용 로봇 모델: 테이블 + RB5-850e + OnRobot RG2 + 손목 RealSense D405
+
+  프레임 구조 (TF 트리)
+    world ─┬─ table                         (테이블, 충돌 검사용 · 윗면 높이 = table.top_z)
+           ├─ robot_stand                   (로봇 받침)
+           └─ link0 ─ … ─ link6 ─ tcp       (RB5 팔 · 레인보우 공식 모델 · tcp = 툴 플랜지 면)
+                                   └─ rg2_hand ─┬─ rg2_leftfinger / rg2_rightfinger
+                                                ├─ tool_tip   ★ 집기 기준점(손끝). z축 = 접근 방향, x축 = 닫히는 방향
+                                   └─ flange_hand ─ d405_link   (카메라 — 플랜지 쪽 브래킷에 고정. 내부 광학 프레임은 드라이버가 발행)
+
+  ※ ROS 1 판: 하드웨어 설정은 URDF 가 아니라 rb_driver 노드의 파라미터로 준다 (ROS 2 판은 URDF 의 ros2_control 블록).
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="edu_pick">
+  <xacro:arg name="scene_file" default="$(find edu_pick_description)/config/scene.yaml"/>
+
+  <xacro:property name="scene" value="${xacro.load_yaml('$(arg scene_file)')}"/>
+  <xacro:property name="tb" value="${scene['table']}"/>
+  <xacro:property name="cam" value="${scene['camera_mount']}"/>
+  <xacro:property name="deg" value="${pi/180.0}"/>
+
+  <xacro:include filename="$(find rbpodo_description)/robots/rb_6dof.xacro"/>
+  <xacro:include filename="$(find edu_pick_description)/urdf/rg2.xacro"/>
+
+  <link name="world"/>
+
+  <!-- ① 테이블 -->
+  <link name="table">
+    <visual>
+      <origin xyz="0 0 ${-tb['thickness']/2}"/>
+      <geometry><box size="${tb['size_xy'][0]} ${tb['size_xy'][1]} ${tb['thickness']}"/></geometry>
+      <material name="wood"><color rgba="0.76 0.62 0.45 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${-tb['thickness']/2}"/>
+      <geometry><box size="${tb['size_xy'][0]} ${tb['size_xy'][1]} ${tb['thickness']}"/></geometry>
+    </collision>
+  </link>
+  <joint name="table_joint" type="fixed">
+    <parent link="world"/>
+    <child link="table"/>
+    <origin xyz="${tb['center_xy'][0]} ${tb['center_xy'][1]} ${tb['top_z']}"/>
+  </joint>
+
+  <!-- ② RB5-850e (레인보우로보틱스 rbpodo_description, Apache-2.0 — install.sh 가 받아 둔다) -->
+  <xacro:rb_6dof model_id="rb5_850e" prefix="" tcp_name="tcp" tcp_xyz="0 -0.0967 0" tcp_rpy="0 0 0"/>
+  <joint name="world_to_link0" type="fixed">
+    <parent link="world"/>
+    <child link="link0"/>
+    <origin xyz="0 0 0"/>   <!-- world = 로봇 베이스 바닥면. 테이블은 table.top_z 만큼 아래/위 -->
+  </joint>
+
+  <!-- ②-1 로봇 받침: 테이블 윗면(top_z) ~ 로봇 바닥(0). top_z 가 0 이면 두께 1 mm 로 둔다 -->
+  <xacro:property name="stand_h" value="${max(-tb['top_z'], 0.001)}"/>
+  <link name="robot_stand">
+    <visual>
+      <origin xyz="0 0 ${-stand_h/2}"/>
+      <geometry><box size="${scene['robot_stand']['size_xy'][0]} ${scene['robot_stand']['size_xy'][1]} ${stand_h}"/></geometry>
+      <material name="stand_gray"><color rgba="0.55 0.55 0.6 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${-stand_h/2}"/>
+      <geometry><box size="${scene['robot_stand']['size_xy'][0]} ${scene['robot_stand']['size_xy'][1]} ${stand_h}"/></geometry>
+    </collision>
+  </link>
+  <joint name="robot_stand_joint" type="fixed">
+    <parent link="world"/>
+    <child link="robot_stand"/>
+    <origin xyz="0 0 0"/>
+  </joint>
+
+  <!-- ③ RG2 그리퍼 — tcp(툴 플랜지 면)에 바로 장착. 접근 방향 = rg2_hand +x = tcp -y -->
+  <xacro:onrobot_rg2 parent="tcp">
+    <origin xyz="0 0 0" rpy="0 0 ${-pi/2}"/>
+  </xacro:onrobot_rg2>
+
+  <!-- ④ 집기 기준점: 그리퍼를 최대로 벌렸을 때의 손끝(실측 20.5 cm). MoveIt 은 이 프레임을 목표로 계획한다.
+       닫으면 실제 손끝은 이보다 최대 3.5 cm 앞으로 나온다(pick_place 가 잡는 높이에 반영).
+       y = −flange_x_offset: rg2_hand y = 툴 플랜지 X · z = −flange_z_offset: rg2_hand z = 툴 플랜지 Z(카메라 쪽).
+       실제 손가락 중심이 치우친 만큼 기준점을 옮긴다 → 물체 중심을 목표로 주면 플랜지가 +X·+Z 쪽으로 간다 -->
+  <link name="tool_tip"/>
+  <joint name="tool_tip_joint" type="fixed">
+    <parent link="rg2_hand"/>
+    <child link="tool_tip"/>
+    <origin xyz="${scene['gripper']['tip_open']} ${-scene['gripper'].get('flange_x_offset', 0.0)} ${-scene['gripper'].get('flange_z_offset', 0.0)}" rpy="${pi/2} 0 ${pi/2}"/>
+  </joint>
+
+  <!-- ⑤ 손목 카메라 D405 (외형은 상자로 근사: 42×42×23 mm) -->
+  <link name="d405_link">
+    <visual>
+      <geometry><box size="0.023 0.042 0.042"/></geometry>
+      <material name="cam_gray"><color rgba="0.3 0.3 0.3 1"/></material>
+    </visual>
+    <collision><geometry><box size="0.023 0.042 0.042"/></geometry></collision>
+  </link>
+  <!-- 카메라 기준 = 툴 플랜지(축 방향은 그리퍼 몸체와 같게 돌린 프레임 flange_hand).
+       확인: 카메라로 잰 테이블 높이 -0.091 m ↔ 실측 -0.085 m (6 mm 차) -->
+  <link name="flange_hand"/>
+  <joint name="flange_hand_joint" type="fixed">
+    <parent link="tcp"/>
+    <child link="flange_hand"/>
+    <origin xyz="0 0 0" rpy="0 0 ${-pi/2}"/>
+  </joint>
+  <joint name="d405_mount_joint" type="fixed">
+    <parent link="flange_hand"/>
+    <child link="d405_link"/>
+    <origin xyz="${cam['xyz'][0]} ${cam['xyz'][1]} ${cam['xyz'][2]}"
+            rpy="${cam['rpy_deg'][0]*deg} ${cam['rpy_deg'][1]*deg} ${cam['rpy_deg'][2]*deg}"/>
+  </joint>
+</robot>

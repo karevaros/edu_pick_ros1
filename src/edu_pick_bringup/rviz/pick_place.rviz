@@ -1,0 +1,60 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 0.1
+      Plane Cell Count: 20
+    - Class: rviz/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Robot Description: robot_description
+    - Class: rviz/PointCloud2
+      Name: 카메라 점군
+      Enabled: true
+      Topic: /camera/d405/depth/color/points
+      Style: Points
+      Size (Pixels): 2
+      Color Transformer: RGB8
+      Decay Time: 0
+    - Class: rviz/MarkerArray
+      Name: 인식 결과
+      Enabled: true
+      Marker Topic: /edu_pick/objects_markers
+    - Class: moveit_rviz_plugin/PlanningScene
+      Name: MoveIt 장면(장애물)
+      Enabled: true
+      Planning Scene Topic: /move_group/monitored_planning_scene
+      Robot Description: robot_description
+      Scene Geometry:
+        Scene Alpha: 0.6
+        Show Scene Geometry: true
+      Scene Robot:
+        Show Robot Visual: false
+        Show Robot Collision: false
+    - Class: moveit_rviz_plugin/Trajectory
+      Name: 계획된 경로
+      Enabled: true
+      Robot Description: robot_description
+      Trajectory Topic: /move_group/display_planned_path
+      State Display Time: 0.05 s
+      Loop Animation: true
+      Show Trail: false
+      Robot Alpha: 0.4
+  Global Options:
+    Fixed Frame: world
+    Background Color: 48; 48; 48
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 2.0
+      Focal Point: {X: 0.45, Y: 0, Z: 0.0}
+      Pitch: 0.55
+      Yaw: 0.9
+Window Geometry:
+  Width: 1500
+  Height: 950

@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(edu_pick_driver)
+find_package(catkin REQUIRED)
+catkin_package()
+catkin_install_python(PROGRAMS scripts/rb_driver.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
