@@ -9,7 +9,7 @@
 #
 #   하는 일
 #     [0] ROS Noetic 설치 (없을 때만 · 공식 apt 저장소 · 약 1 GB 내려받음)
-#     [1] apt 패키지 설치 (MoveIt · RealSense 드라이버 · OpenCV …) + RealSense USB 권한(udev) 규칙
+#     [1] apt 패키지 설치 (MoveIt · OpenCV …) + D405 카메라 라이브러리(pyrealsense2, pip) + USB 권한(udev) 규칙
 #     [2] RB5 로봇 모델(레인보우 rbpodo_description) 받기 → ROS 1 패키지로 감싸기
 #     [3] 워크스페이스 빌드 (catkin_make) · ~/.bashrc 에 환경 설정 줄 추가
 #
@@ -21,6 +21,11 @@ set -euo pipefail
 WS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 버전 고정 — RB5 모델 파일을 가져오는 레인보우 저장소 커밋 (ROS 2 판과 같은 모델)
 RBPODO_ROS2_COMMIT="5e8294a985e7ce5e20e70564c2681130afc5f502"
+PYREALSENSE2_VERSION="2.55.1.6486"   # D405 지원 · Python 3.8 용 휠이 있는 버전
+
+# apt 가 설치 중에 질문(키보드 배치·시간대 등)을 띄우면 스크립트가 멈춘다 → 묻지 않고 기본값으로
+#   (sudo 는 환경변수를 지우므로 명령마다 붙인다)
+APT="sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 
 step() { echo; echo "━━━ $* ━━━"; }
 die()  { echo "❌ $*" >&2; exit 1; }
@@ -33,33 +38,44 @@ case "$WS" in *" "*) die "설치 폴더 경로에 빈칸이 있습니다: $WS �
 # ── [0] ROS Noetic ───────────────────────────────────────────────────────────
 # 공식 설치 절차(wiki.ros.org/noetic/Installation/Ubuntu)를 따른다. 저장소 키는 ros-apt-source 패키지로 받는다.
 step "[0/3] ROS 1 Noetic"
+# 앞 설치가 중간에 끊겨 반쯤 설치된 패키지가 있으면 마저 끝낸다
+#   (dpkg --audit 는 root 가 아니면 잠금 파일을 못 읽어 '이상 없음'처럼 빈 결과를 낸다 → 쓰지 않는다)
+half_installed() {
+  [ -n "$(ls -A /var/lib/dpkg/updates 2>/dev/null)" ] ||
+  dpkg-query -W -f='${db:Status-Abbrev}\n' 2>/dev/null | grep -qE '^.[UFHW]'
+}
+if [ "${SKIP_APT:-0}" != "1" ] && half_installed; then
+  echo "  중간에 끊긴 설치를 마저 끝냅니다"
+  sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a
+fi
 if [ -f /opt/ros/noetic/setup.bash ]; then
   echo "  이미 설치됨 — 건너뜀"
 elif [ "${SKIP_APT:-0}" = "1" ]; then
   die "ROS Noetic 이 없는데 SKIP_APT=1 입니다."
 else
   echo "  ROS Noetic 을 설치합니다(약 1 GB · 인터넷 속도에 따라 10~30분)."
-  sudo apt-get update
-  sudo apt-get install -y curl lsb-release
+  $APT update
+  $APT install curl lsb-release
   ROS_APT_SOURCE_VERSION=$(curl -fsSL https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
                            | grep -F '"tag_name"' | awk -F'"' '{print $4}')
   [ -n "$ROS_APT_SOURCE_VERSION" ] || die "ROS 저장소 정보를 받지 못했습니다 — 인터넷 연결을 확인하세요."
   curl -fsSL -o /tmp/ros-apt-source.deb \
     "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros-apt-source_${ROS_APT_SOURCE_VERSION}.focal_all.deb"
   sudo dpkg -i /tmp/ros-apt-source.deb
-  sudo apt-get update
-  sudo apt-get install -y ros-noetic-desktop
+  $APT update
+  $APT install ros-noetic-desktop
   [ -f /opt/ros/noetic/setup.bash ] || die "ROS Noetic 설치에 실패했습니다 — 위 메시지를 확인하세요."
 fi
 
 # ── [1] apt ──────────────────────────────────────────────────────────────────
 APT_PKGS=(
-  ros-noetic-moveit
+  ros-noetic-desktop ros-noetic-moveit
   ros-noetic-xacro ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui
   ros-noetic-robot-state-publisher ros-noetic-cv-bridge ros-noetic-tf2-ros
-  ros-noetic-realsense2-camera ros-noetic-rqt-image-view
-  python3-opencv python3-numpy python3-yaml python3-catkin-pkg
+  ros-noetic-rqt-image-view
+  python3-opencv python3-numpy python3-yaml python3-catkin-pkg python3-pip
   git curl build-essential
+  fonts-noto-cjk            # RViz 의 한글 표시 이름 (데스크톱에는 보통 이미 있다)
 )
 step "[1/3] apt 패키지 + RealSense USB 권한"
 if [ "${SKIP_APT:-0}" = "1" ]; then
@@ -71,13 +87,19 @@ else
     echo "  전부 설치돼 있음"
   else
     echo "  설치할 패키지: ${MISSING[*]}"
-    sudo apt-get update
-    sudo apt-get install -y "${MISSING[@]}"
+    $APT update
+    $APT install "${MISSING[@]}"
+  fi
+  # D405 카메라 라이브러리 — ROS 1 공식 RealSense 드라이버는 D405 를 지원하지 않아 파이썬 라이브러리로 직접 읽는다
+  if python3 -c "import pyrealsense2" 2>/dev/null; then
+    echo "  pyrealsense2 이미 있음"
+  else
+    pip3 install --user "pyrealsense2==$PYREALSENSE2_VERSION"
   fi
   # RealSense 카메라를 sudo 없이 쓰기 위한 USB 권한 규칙 (없으면 실습실에서 카메라가 안 잡힌다)
   if [ ! -f /etc/udev/rules.d/99-realsense-libusb.rules ]; then
     curl -fsSL -o /tmp/99-realsense-libusb.rules \
-      https://raw.githubusercontent.com/IntelRealSense/librealsense/master/config/99-realsense-libusb.rules
+      https://raw.githubusercontent.com/IntelRealSense/librealsense/v2.55.1/config/99-realsense-libusb.rules
     sudo cp /tmp/99-realsense-libusb.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules 2>/dev/null && sudo udevadm trigger 2>/dev/null || true
     echo "  RealSense USB 권한 규칙 설치"

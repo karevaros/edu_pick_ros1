@@ -19,4 +19,5 @@
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <!-- pyrealsense2 (D405) 는 apt 에 없어 install.sh 가 pip 로 설치한다 -->
 </package>

@@ -23,8 +23,8 @@ for p in rbpodo_description edu_pick_msgs edu_pick_description edu_pick_driver e
          edu_pick_perception edu_pick_task edu_pick_bringup moveit_ros_move_group moveit_simple_controller_manager; do
   rospack find "$p" >/dev/null 2>&1 && ok "$p" || bad "$p 없음"
 done
-rospack find realsense2_camera >/dev/null 2>&1 && ok "realsense2_camera" \
-  || warn "realsense2_camera 없음 — 실습실(실기)에서 필요: sudo apt install ros-noetic-realsense2-camera"
+python3 -c "import pyrealsense2" 2>/dev/null && ok "pyrealsense2 (D405 카메라)" \
+  || warn "pyrealsense2 없음 — 실습실(실기)에서 필요: pip3 install --user pyrealsense2"
 
 echo "[3] 모델"
 xacro "$(rospack find edu_pick_description)/urdf/edu_pick.urdf.xacro" > /tmp/edu_pick_check.urdf 2>/dev/null \
@@ -34,7 +34,8 @@ for f in tool_tip d405_link table rg2_hand link0 tcp; do
 done
 
 echo "[4] 카메라 (실습실에서만 필요)"
-if lsusb 2>/dev/null | grep -qi "8086:0b5b"; then ok "D405 USB 연결됨"; else warn "D405 연결 안 됨 (집에서는 정상)"; fi
+if python3 -c "import pyrealsense2 as rs, sys; sys.exit(0 if any('D405' in d.get_info(rs.camera_info.name) for d in rs.context().devices) else 1)" 2>/dev/null \
+   || lsusb 2>/dev/null | grep -qi "8086:0b5b"; then ok "D405 연결됨"; else warn "D405 연결 안 됨 (집에서는 정상)"; fi
 
 echo "[5] 가상 모드로 시나리오 전체 실행 (1~2분)"
 if [ "$FAIL" -gt 0 ]; then

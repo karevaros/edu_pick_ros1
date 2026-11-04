@@ -54,6 +54,8 @@ class MockBox:
             return
         t0, pts = self.run
         now = time.time() - t0
+        if now < 0:                         # 아직 출발 전
+            return
         if self.fault and self.fault_now is None and now > pts[-1][0] / 2:
             self.fault_now = self.fault
             self.robot_state = 2

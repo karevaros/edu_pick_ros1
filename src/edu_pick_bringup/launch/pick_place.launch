@@ -15,7 +15,7 @@
     gripper_adapter         RG2 (sim 에서는 명령을 보내지 않음)
     joint_state_publisher   팔 관절 + 그리퍼 관절을 합쳐 /joint_states
     move_group              MoveIt (계획·실행)
-    카메라                  sim: fake_camera(가상) / real: realsense2_camera(D405)
+    카메라                  sim: fake_camera(가상) / real: d405_camera(pyrealsense2)
     object_detector         물체 인식 (sim·real 같은 코드)
     rviz
 -->
@@ -30,6 +30,7 @@
   <arg name="camera" default="true" doc="mode:=real 에서 D405 드라이버 실행 여부"/>
   <arg name="camera_serial" default="" doc="카메라가 여러 대일 때 시리얼"/>
   <arg name="rviz" default="true"/>
+  <arg name="fake_camera" default="$(eval arg('mode') != 'real')" doc="가상 카메라 — sim 기본. 시험용: mode:=real camera:=false fake_camera:=true (tools/mock_controlbox.py 와 함께)"/>
 
   <arg name="real" value="$(eval arg('mode') == 'real')"/>
   <arg name="grip_dry" value="$(eval (not arg('real') or arg('cb_simulation')) if arg('gripper_dry_run') == 'auto' else arg('gripper_dry_run') in (True, 'true', '1'))"/>
@@ -62,15 +63,12 @@
   <node pkg="edu_pick_perception" type="object_detector.py" name="object_detector" output="screen"/>
 
   <!-- 카메라 -->
-  <node if="$(eval not arg('real'))" pkg="edu_pick_perception" type="fake_camera.py" name="fake_camera" output="screen"/>
-  <include if="$(eval arg('real') and arg('camera'))" file="$(find realsense2_camera)/launch/rs_camera.launch">
-    <arg name="camera" value="camera/d405"/>
-    <arg name="tf_prefix" value="d405"/>
-    <arg name="serial_no" value="$(arg camera_serial)"/>
-    <arg name="filters" value="pointcloud"/>
-    <arg name="ordered_pc" value="true"/>
-    <arg name="align_depth" value="true"/>
-  </include>
+  <node if="$(arg fake_camera)" pkg="edu_pick_perception" type="fake_camera.py" name="fake_camera" output="screen"/>
+  <!-- D405: ROS 1 공식 드라이버(realsense2_camera)가 D405 를 지원하지 않아 pyrealsense2 로 만든 노드를 쓴다 -->
+  <node if="$(eval arg('real') and arg('camera'))" pkg="edu_pick_perception" type="d405_camera.py" name="d405_camera"
+        output="screen">
+    <param name="serial" value="$(arg camera_serial)"/>
+  </node>
 
   <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find edu_pick_bringup)/rviz/pick_place.rviz"/>
 </launch>

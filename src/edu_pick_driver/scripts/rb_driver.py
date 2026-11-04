@@ -141,13 +141,15 @@ class ControlBox:
     def _parse(b):
         f = lambda off, n=1: struct.unpack_from(f"<{n}f", b, off)
         i = lambda off, n=1: struct.unpack_from(f"<{n}i", b, off)
+        # 안전 신호는 '== 1' 일 때만 참으로 본다: 이 제어박스는 자기충돌 칸에 의미 없는 큰 값
+        #   (예: 2065927220)을 보낸다(실측 · ROS 2 판 연구에서도 같은 값) → '0 이 아니면'으로 보면 늘 결함
         op = i(OFF_OP_STAT, 5)
         return {"jnt_ref_deg": f(OFF_JNT_REF, 6), "task_state": i(OFF_TASK_STATE)[0],
                 "speed_bar": f(OFF_SPEED_BAR)[0], "robot_state": i(OFF_ROBOT_STATE)[0],
                 "simulation": i(OFF_SIM_MODE)[0] == 1,
-                "collision": op[0] != 0, "self_collision": op[2] != 0,
-                "soft_estop": op[3] != 0, "emergency_stop": op[4] != 0,
-                "inbox_trap": any(v != 0 for v in i(OFF_INBOX_TRAP, 2))}
+                "collision": op[0] == 1, "self_collision": op[2] == 1,
+                "soft_estop": op[3] == 1, "emergency_stop": op[4] == 1,
+                "inbox_trap": any(v == 1 for v in i(OFF_INBOX_TRAP, 2))}
 
     def close(self):
         self.alive = False

@@ -21,6 +21,16 @@ Visualization Manager:
       Size (Pixels): 2
       Color Transformer: RGB8
       Decay Time: 0
+    - Class: rviz/Image
+      Name: 인식 과정(debug_image)
+      Enabled: true
+      Image Topic: /edu_pick/debug_image
+      Transport Hint: raw
+      Queue Size: 2
+    - Class: rviz/MarkerArray
+      Name: 가상 물체(sim)
+      Enabled: true
+      Marker Topic: /edu_pick/sim_objects
     - Class: rviz/MarkerArray
       Name: 인식 결과
       Enabled: true
@@ -56,5 +66,7 @@ Visualization Manager:
       Pitch: 0.55
       Yaw: 0.9
 Window Geometry:
+  "인식 과정(debug_image)":
+    collapsed: false
   Width: 1500
   Height: 950

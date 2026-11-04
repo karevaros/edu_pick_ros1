@@ -9,6 +9,8 @@
  → 8 하역 위치 이동 → 9 하강 → 10 놓기 → 11 상승 → (결과 확인) → 12 초기위치
 ```
 
+![실기 화면 (ROS 1) — 왼쪽 위: D405 인식 과정 · 오른쪽: 로봇 모델 + 카메라 점군 + 인식 결과](docs/images/ros1_real_observe.png)
+
 로봇·카메라가 없어도 **가상 모드(sim)** 로 시나리오 전체를 똑같이 돌려 볼 수 있습니다.
 **수업 전에 집에서 1장(설치·점검)까지 끝내 오세요.** Ubuntu 20.04 만 깔린 노트북에서 시작하면 됩니다.
 
@@ -68,7 +70,7 @@ bash install.sh
 | 단계 | 내용 | 시간 |
 |---|---|---|
 | [0/3] | **ROS 1 Noetic 설치** (공식 저장소 등록 → `ros-noetic-desktop`) — 이미 있으면 건너뜀 | 10~30분 |
-| [1/3] | MoveIt · RealSense 카메라 드라이버 · OpenCV 설치 + 카메라 USB 권한 설정 | 5~15분 |
+| [1/3] | MoveIt · OpenCV · D405 카메라 라이브러리(`pyrealsense2`) 설치 + 카메라 USB 권한 설정 | 5~15분 |
 | [2/3] | RB5 로봇 모델(레인보우 공식 `rbpodo_description`) 내려받기 | 1분 |
 | [3/3] | 실습 패키지 빌드(`catkin_make`) · `~/.bashrc` 에 환경 설정 줄 추가 | 1~3분 |
 
@@ -91,7 +93,7 @@ bash ~/edu_pick_ros1/check_setup.sh
       완료 — 1개 옮김
   ✅ Pick and place 1회 성공
 
-통과 24 · 경고 1 · 실패 0          ← 경고 1 = 카메라 미연결(집에서는 정상)
+통과 22 · 경고 1 · 실패 0          ← 경고 1 = 카메라 미연결(집에서는 정상)
 ✅ 모두 통과 — 실습 준비 완료
 ```
 - `⚠ D405 연결 안 됨` 은 집에서는 정상입니다(카메라는 실습실에 있습니다).
@@ -132,7 +134,7 @@ cd ~/edu_pick_ros1 && git pull && bash install.sh
 |---|---|
 | `edu_pick_description` | 로봇 모델(URDF): 테이블 + RB5 + RG2 + D405. **`config/scene.yaml` = 실습 설정 파일(유일하게 고치는 파일)** |
 | `edu_pick_moveit` | MoveIt 설정(경로 계획) |
-| `edu_pick_perception` | `object_detector` 물체 인식 · `fake_camera` 가상 카메라(sim) |
+| `edu_pick_perception` | `object_detector` 물체 인식 · `fake_camera` 가상 카메라(sim) · `d405_camera` 실기 카메라 |
 | `edu_pick_task` | `pick_place` **12단계 시나리오 노드 — 실습의 주인공** |
 | `edu_pick_driver` | **`rb_driver`** — RB5 제어박스와 TCP 로 직접 통신하는 ROS 1 드라이버(아래 설명) |
 | `edu_pick_bringup` | 전체 실행 launch · RG2 그리퍼 어댑터 |
@@ -151,6 +153,9 @@ cd ~/edu_pick_ros1 && git pull && bash install.sh
 - 제어박스 **명령 채널(5000)** 에 스크립트를, **데이터 채널(5001)** 에서 상태를 주고받는다.
 - MoveIt 이 보낸 궤적을 **통째로** 제어박스에 넘긴다(`move_ros_j_add` × 점 개수 → `move_ros_j_run`). 실행 중에는 ROS 가 명령을 보내지 않으므로 네트워크 지연에 강하다(ROS 2 판은 0.01 초마다 서보 명령을 보낸다).
 - 그리퍼 명령은 `/rb_driver/script` 서비스로 같은 명령 채널을 쓴다. 가상 모드에서는 `fake` 로 궤적을 시간에 맞춰 흉내낸다.
+- 실행 전 검사: 관절 속도 상한(`max_joint_velocity` 0.8 rad/s) · 시작 자세. 실행 중 감시: 비상정지·충돌·**인박스 위반**·일시정지·상태 끊김 → 즉시 `task stop`.
+
+**카메라 노드 `d405_camera` (ROS 2 판과 다른 부분)** — ROS 1 공식 RealSense 드라이버(`realsense2_camera` 2.3.2)는 **D405 를 지원하지 않는다**(`Unsupported device! Product ID: 0x0B5B`). 그래서 RealSense 파이썬 라이브러리(`pyrealsense2`)로 D405 를 직접 읽어, ROS 2 판과 같은 토픽(`/camera/d405/depth/color/points`)·형식(컬러 정렬 격자형 점군)으로 낸다. 인식 노드는 두 판이 같은 코드다.
 
 **좌표계:** `world` = 로봇 베이스 바닥 중심 (x 앞, y 왼쪽, z 위). **`tool_tip`** = 그리퍼 손끝. z축이 접근 방향, x축이 손가락 닫히는 방향입니다. "위에서 집기" = `tool_tip` z축이 아래(-z)를 향하는 자세.
 
@@ -311,6 +316,16 @@ python3 ~/edu_pick_ros1/tools/timing_report.py ~/edu_pick_runs/* -o report.md
 
 ---
 
+**로봇 없이 실기 경로 시험 (`tools/mock_controlbox.py`)** — 제어박스와 같은 규약으로 답하는 가짜 제어박스. 드라이버를 고쳤을 때 실습실에 가기 전에 확인한다.
+```bash
+python3 ~/edu_pick_ros1/tools/mock_controlbox.py                     # 터미널 1
+roslaunch edu_pick_bringup pick_place.launch mode:=real robot_ip:=127.0.0.1 camera:=false fake_camera:=true   # 터미널 2
+rosrun edu_pick_task pick_place.py --count 2                          # 터미널 3
+```
+`--fault inbox` 를 주면 궤적 중간에 인박스 위반을 내 드라이버가 멈추는지 볼 수 있다.
+
+**실기 확인 이력 (2026-11-04, 이 실습실 RB5)** — Simulation 모드 wrist3 ±5° → Real 모드 wrist3 ±5°(목표와 0.01°) · 초기위치·대기위치(0.01°) · D405 인식 4개 · **사과 1개 pick and place 성공(육안 확인)** · 물체 1개당 29.5 s.
+
 ## 6. 문제 해결
 
 | 증상 | 원인·조치 |
@@ -327,6 +342,8 @@ python3 ~/edu_pick_ros1/tools/timing_report.py ~/edu_pick_runs/* -o report.md
 | `궤적 거부: 관절 속도 … > 상한` | `motion.velocity_scaling` 을 낮춘다(실기 0.20 이하) |
 | `제어박스 상태가 1초 넘게 안 들어옵니다` | 네트워크 끊김 — 랜선·`ping` |
 | move_group 로그의 `No 3D sensor plugin(s) defined` | 정상(이 실습은 옥토맵을 쓰지 않는다) |
+| `Got a transition callback on a goal handle that we're not tracking` | 정상(액션 결과가 늦게 도착할 때 ROS 1 actionlib 가 내는 경고) |
+| `D405 를 열 수 없습니다` | USB 3 포트에 다시 꽂기 · 다른 프로그램(realsense-viewer 등)이 카메라를 쓰고 있지 않은지 |
 
 ---
 
